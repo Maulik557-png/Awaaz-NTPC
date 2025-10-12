@@ -8,8 +8,9 @@ from .models import Audio, Spectrogram
 logger = logging.getLogger(__name__)
 
 
-def index(request):
-    return render(request, 'index.html')
+# Remove the index view if it's not meant to serve a Django template
+# def index(request):
+#     return render(request, 'index.html')
 
 
 @csrf_exempt

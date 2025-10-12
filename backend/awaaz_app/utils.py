@@ -49,7 +49,7 @@ def preprocess_image(image_path):
 def predict_fault(image_path):
     # Load image, preprocess, and predict
     try:
-        model = load_model('saved_models/cnn_model.h5')
+        model = load_model(os.path.join(settings.MODEL_ROOT, 'cnn_model.h5'))
         img = preprocess_image(image_path)
         pred = model.predict(img)
         return np.argmax(pred)

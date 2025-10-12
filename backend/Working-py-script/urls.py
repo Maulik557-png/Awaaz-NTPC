@@ -5,7 +5,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('awaaz_app.urls')),  # Include your app urls
+    path('api/', include('awaaz_app.urls')),  # Include your app urls
 ]
 
 # Serve media files during development

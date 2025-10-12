@@ -1,0 +1,8 @@
+Django
+django-cors-headers
+tensorflow
+numpy
+librosa
+matplotlib
+Pillow
+pydub
