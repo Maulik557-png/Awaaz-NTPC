@@ -86,7 +86,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = BASE_DIR / 'uploads'
 
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
@@ -96,4 +96,5 @@ MODEL_ROOT = BASE_DIR / 'saved_models'
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:8080',
+    'http://127.0.0.1:8080',
 ]

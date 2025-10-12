@@ -157,6 +157,8 @@ export type Database = {
           health_score: number | null
           id: string
           notes: string | null
+          prediction: number | null
+          remedies: string | null
           user_id: string
         }
         Insert: {
@@ -169,6 +171,8 @@ export type Database = {
           health_score?: number | null
           id?: string
           notes?: string | null
+          prediction?: number | null
+          remedies?: string | null
           user_id: string
         }
         Update: {
@@ -181,6 +185,8 @@ export type Database = {
           health_score?: number | null
           id?: string
           notes?: string | null
+          prediction?: number | null
+          remedies?: string | null
           user_id?: string
         }
         Relationships: [

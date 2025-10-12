@@ -31,7 +31,7 @@ def generate_spectrogram(audio_path):
     plt.title('Mel-frequency spectrogram')
     plt.tight_layout()
     filename = os.path.basename(audio_path).replace('.wav', '.png')
-    full_image_path = os.path.join(settings.MEDIA_ROOT, 'sources', filename)
+    full_image_path = os.path.join(settings.BASE_DIR, 'sources', filename)
     plt.savefig(full_image_path)
     plt.close()
     return f'sources/{filename}'

@@ -36,7 +36,11 @@ def upload_audio(request):
         # Send remedies back
         remedies = map_prediction_to_remedy(prediction)
         logger.info(f"Remedies: {remedies}")
-        return JsonResponse({'prediction': prediction, 'remedies': remedies, 'spectrogram_url': spectrogram.image.url})
+        return JsonResponse({
+            'prediction': int(prediction),
+            'remedies': remedies,
+            'spectrogram_url': spectrogram.image.url
+        })
 
 
 def spectrogram_view(request, filename):

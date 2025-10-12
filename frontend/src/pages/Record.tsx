@@ -118,8 +118,8 @@ const Record = () => {
         throw new Error(`Backend analysis failed: ${backendResponse.status} ${errorText}`);
       }
 
-      const { prediction, remedies } = await backendResponse.json();
-      console.log('Backend response:', { prediction, remedies });
+      const { prediction, remedies, spectrogram_url } = await backendResponse.json();
+      console.log('Backend response:', { prediction, remedies, spectrogram_url });
 
       // Then, save to Supabase
       const { data: { user } } = await supabase.auth.getUser();
