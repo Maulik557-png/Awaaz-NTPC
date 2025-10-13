@@ -6,3 +6,4 @@ librosa
 matplotlib
 Pillow
 pydub
+python-dotenv

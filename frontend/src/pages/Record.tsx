@@ -12,6 +12,8 @@ const Record = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [selectedEquipment, setSelectedEquipment] = useState("");
+  const [equipmentList, setEquipmentList] = useState<any[]>([]);
+  const [loadingEquipment, setLoadingEquipment] = useState(true);
   const [maxDuration, setMaxDuration] = useState(60);
   const [recordedAudio, setRecordedAudio] = useState<Blob | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -19,6 +21,26 @@ const Record = () => {
   const chunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
+    const fetchEquipment = async () => {
+      try {
+        const { data: equipment, error } = await supabase
+          .from('equipment')
+          .select('id, name, category, plant_location')
+          .order('name');
+
+        if (error) throw error;
+
+        setEquipmentList(equipment || []);
+      } catch (error) {
+        console.error('Error fetching equipment:', error);
+        toast.error('Failed to load equipment list');
+      } finally {
+        setLoadingEquipment(false);
+      }
+    };
+
+    fetchEquipment();
+
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
@@ -201,11 +223,17 @@ const Record = () => {
                   <SelectValue placeholder="Choose equipment to monitor" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="motor-a1">Motor Unit A1</SelectItem>
-                  <SelectItem value="pump-b3">Pump B3</SelectItem>
-                  <SelectItem value="valve-c7">Valve C7</SelectItem>
-                  <SelectItem value="turbine-t2">Turbine T2</SelectItem>
-                  <SelectItem value="heat-exchanger-hx5">Heat Exchanger HX5</SelectItem>
+                  {loadingEquipment ? (
+                    <SelectItem value="loading" disabled>Loading equipment...</SelectItem>
+                  ) : equipmentList.length === 0 ? (
+                    <SelectItem value="no-equipment" disabled>No equipment available</SelectItem>
+                  ) : (
+                    equipmentList.map((equipment) => (
+                      <SelectItem key={equipment.id} value={equipment.id}>
+                        {equipment.name} ({equipment.category} - {equipment.plant_location})
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
