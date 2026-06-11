@@ -1,26 +1,60 @@
 import { FileText, Download, Calendar, TrendingUp } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-
-const reportsData = [
-  { id: 1, title: "Daily Inspection Report", date: "2025-10-10", type: "daily", status: "completed", equipment: 15 },
-  { id: 2, title: "Daily Equipment Check", date: "2025-10-09", type: "daily", status: "completed", equipment: 14 },
-  { id: 3, title: "Weekly Maintenance Summary", date: "2025-10-03", type: "weekly", status: "completed", equipment: 47 },
-  { id: 4, title: "Weekly Operations Review", date: "2025-09-26", type: "weekly", status: "completed", equipment: 45 },
-  { id: 5, title: "Monthly Performance Report", date: "2025-09-30", type: "monthly", status: "archived", equipment: 247 },
-  { id: 6, title: "Monthly Health Analysis", date: "2025-08-31", type: "monthly", status: "archived", equipment: 240 },
-  { id: 7, title: "Motor Unit A1 Analysis", date: "2025-10-09", type: "equipment", status: "completed", equipment: 1 },
-  { id: 8, title: "Critical Alerts Summary", date: "2025-10-08", type: "alert", status: "completed", equipment: 8 },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 const Reports = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("all");
+  const [reportsData, setReportsData] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const { data: recordings, error } = await supabase
+          .from('recordings')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Group recordings by date to create reports
+        const reportsMap = new Map();
+
+        recordings?.forEach((recording) => {
+          const date = format(new Date(recording.created_at), 'yyyy-MM-dd');
+          if (!reportsMap.has(date)) {
+            reportsMap.set(date, {
+              id: date,
+              title: `Analysis Report - ${format(new Date(recording.created_at), 'MMM dd, yyyy')}`,
+              date: date,
+              type: "daily",
+              status: "completed",
+              equipment: 0,
+              recordings: []
+            });
+          }
+          const report = reportsMap.get(date);
+          report.equipment += 1;
+          report.recordings.push(recording);
+        });
+
+        const reports = Array.from(reportsMap.values());
+        setReportsData(reports);
+      } catch (error) {
+        console.error('Error fetching reports:', error);
+        toast.error('Failed to load reports');
+      }
+    };
+
+    fetchReports();
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -36,11 +70,11 @@ const Reports = () => {
     return reportsData.filter(report => report.type === type);
   };
 
-  const handleDownload = (reportId: number, title: string) => {
+  const handleDownload = (reportId: string, title: string) => {
     toast.success(`Downloading ${title}...`);
   };
 
-  const handleViewReport = (reportId: number) => {
+  const handleViewReport = (reportId: string) => {
     navigate(`/reports/${reportId}`);
   };
 

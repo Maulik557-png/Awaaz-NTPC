@@ -4,44 +4,92 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 const ReportDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [report, setReport] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Mock report data - in real app, fetch from Supabase
-  const report = {
-    id: id,
-    title: "Daily Inspection Report",
-    date: "2025-10-10",
-    type: "Daily",
-    status: "completed",
-    equipment: 15,
-    healthScore: 87,
-    criticalIssues: 2,
-    warnings: 5,
-    summary: "Overall equipment health is good with some minor warnings that require attention.",
-    findings: [
-      {
-        equipment: "Motor Unit A1",
-        status: "warning",
-        issue: "Elevated temperature detected",
-        recommendation: "Schedule maintenance within 48 hours",
-      },
-      {
-        equipment: "Turbine T2",
-        status: "critical",
-        issue: "Abnormal vibration patterns",
-        recommendation: "Immediate inspection required",
-      },
-      {
-        equipment: "Pump B3",
-        status: "warning",
-        issue: "Minor pressure fluctuation",
-        recommendation: "Monitor closely for next 24 hours",
-      },
-    ],
-  };
+  useEffect(() => {
+    const fetchReport = async () => {
+      try {
+        // Parse the date from URL params (yyyy-MM-dd format)
+        const reportDate = new Date(id!);
+        const startOfDay = new Date(reportDate);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(reportDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const { data: recordings, error } = await supabase
+          .from('recordings')
+          .select('*')
+          .gte('created_at', startOfDay.toISOString())
+          .lt('created_at', endOfDay.toISOString())
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        if (recordings && recordings.length > 0) {
+          const criticalIssues = recordings.filter(r => r.prediction && r.prediction > 2).length;
+          const warnings = recordings.filter(r => r.prediction && r.prediction > 0 && r.prediction <= 2).length;
+          const healthy = recordings.filter(r => !r.prediction || r.prediction === 0).length;
+          const healthScore = Math.round((healthy / recordings.length) * 100);
+
+          setReport({
+            id: id,
+            title: `Analysis Report - ${format(new Date(id!), 'MMM dd, yyyy')}`,
+            date: id,
+            type: "Daily",
+            status: "completed",
+            equipment: recordings.length,
+            healthScore: healthScore,
+            criticalIssues: criticalIssues,
+            warnings: warnings,
+            summary: `Analysis completed for ${recordings.length} equipment recordings. ${criticalIssues} critical issues, ${warnings} warnings detected.`,
+            findings: recordings.map((recording: any) => ({
+              equipment: recording.equipment_id,
+              status: recording.prediction > 2 ? "critical" : recording.prediction > 0 ? "warning" : "healthy",
+              issue: recording.prediction > 0 ? `Fault ${recording.prediction} detected` : "No issues detected",
+              recommendation: recording.remedies || "Continue monitoring",
+            })),
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching report:', error);
+        toast.error('Failed to load report');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchReport();
+    }
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-muted/30 pb-24 flex items-center justify-center">
+        <Card className="p-6">
+          <p>Loading report...</p>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!report) {
+    return (
+      <div className="min-h-screen bg-muted/30 pb-24 flex items-center justify-center">
+        <Card className="p-6">
+          <p>Report not found</p>
+        </Card>
+      </div>
+    );
+  }
 
   const handleDownload = () => {
     toast.success("Report downloaded successfully");

@@ -38,11 +38,11 @@ def generate_spectrogram(audio_path):
 
 
 def preprocess_image(image_path):
-    # Load image, resize to model's expected size, assume 224x224
-    img = Image.open(image_path).convert('RGB')
-    img = img.resize((224, 224))
+    # Load image, convert to grayscale, resize to model's expected size
+    img = Image.open(image_path).convert('L')  # Convert to grayscale
+    img = img.resize((128, 64))  # Resize to match model's input shape
     img_array = np.array(img) / 255.0  # Normalize
-    img_array = np.expand_dims(img_array, axis=0)  # Add batch dimension
+    img_array = np.expand_dims(img_array, axis=[0, -1])  # Add batch and channel dimensions
     return img_array
 
 

@@ -8,9 +8,18 @@ from .models import Audio, Spectrogram
 logger = logging.getLogger(__name__)
 
 
-# Remove the index view if it's not meant to serve a Django template
-# def index(request):
-#     return render(request, 'index.html')
+@csrf_exempt
+def index(request):
+    """Root endpoint that returns API status"""
+    return JsonResponse({
+        'status': 'running',
+        'message': 'Awaaz NTPC API Server',
+        'endpoints': {
+            'upload': '/api/upload/',
+            'spectrogram': '/api/spectrogram/<filename>/',
+            'admin': '/admin/'
+        }
+    })
 
 
 @csrf_exempt
