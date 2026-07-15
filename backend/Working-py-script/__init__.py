@@ -1,3 +1,3 @@
-# File: /Working-py-script/Working-py-script/Working-py-script/__init__.py
+import pymysql
 
-# This file is intentionally left blank.
+pymysql.install_as_MySQLdb()
