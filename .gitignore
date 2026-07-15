@@ -4,10 +4,30 @@
 .env
 .env.local
 .env.production
+backend/.env
+frontend/.env
 
 # Database
 *.sqlite3
 *.db
+
+# Media / uploads
+backend/media/uploads/*
+backend/media/sources/*
+!backend/media/uploads/.gitkeep
+!backend/media/sources/.gitkeep
+backend/uploads/*
+backend/sources/*
+!backend/uploads/.gitkeep
+!backend/sources/.gitkeep
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Python venv
+backend/.venv/
+.venv/
 
 # Python
 __pycache__/
@@ -54,3 +74,5 @@ uploads/
 # OS
 .DS_Store
 Thumbs.db
+
+PRESENTATION.md
