@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -36,9 +36,13 @@ const Settings = () => {
               <User className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h3 className="font-semibold text-lg">Rajesh Kumar</h3>
-              <p className="text-sm text-muted-foreground">Senior Technician</p>
-              <p className="text-xs text-muted-foreground">EMP-2024-1547</p>
+              <h3 className="font-semibold text-lg">{user?.full_name || "User"}</h3>
+              <p className="text-sm text-muted-foreground">
+                {user?.department || "Technician"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {user?.employee_id || user?.email}
+              </p>
             </div>
           </div>
           <Button variant="outline" className="w-full" onClick={() => navigate("/profile")}>

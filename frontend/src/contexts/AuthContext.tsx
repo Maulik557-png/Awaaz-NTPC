@@ -1,77 +1,125 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { User, Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import {
+  AuthUser,
+  authApi,
+  clearSession,
+  getStoredUser,
+  getToken,
+  setSession,
+} from "@/lib/api";
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, metadata: any) => Promise<{ error: any }>;
+  user: AuthUser | null;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (
+    email: string,
+    password: string,
+    metadata: { full_name: string; employee_id: string }
+  ) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+    const bootstrap = async () => {
+      const token = getToken();
+      const stored = getStoredUser();
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const profile = await authApi.me();
+        const nextUser: AuthUser = {
+          id: profile.user_id,
+          email: profile.email,
+          full_name: profile.full_name,
+          employee_id: profile.employee_id,
+          department: profile.department,
+          phone: profile.phone,
+        };
+        setUser(nextUser);
+        setSession(token, nextUser);
+      } catch {
+        clearSession();
+        setUser(null);
+      } finally {
         setLoading(false);
       }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    };
+    bootstrap();
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (!error) {
+    try {
+      const data = await authApi.login(email, password);
+      setSession(data.token, data.user);
+      setUser(data.user);
       navigate("/dashboard");
+      return { error: null };
+    } catch (error: any) {
+      return { error: error instanceof Error ? error : new Error(String(error)) };
     }
-    return { error };
   };
 
-  const signUp = async (email: string, password: string, metadata: any) => {
-    const redirectUrl = `${window.location.origin}/dashboard`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: metadata
-      }
-    });
-    return { error };
+  const signUp = async (
+    email: string,
+    password: string,
+    metadata: { full_name: string; employee_id: string }
+  ) => {
+    try {
+      await authApi.register({
+        email,
+        password,
+        full_name: metadata.full_name,
+        employee_id: metadata.employee_id,
+      });
+      return { error: null };
+    } catch (error: any) {
+      return { error: error instanceof Error ? error : new Error(String(error)) };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await authApi.logout();
+    } catch {
+      // ignore network errors on logout
+    }
+    clearSession();
+    setUser(null);
     navigate("/login");
   };
 
+  const refreshUser = async () => {
+    const profile = await authApi.me();
+    const token = getToken();
+    if (!token) return;
+    const nextUser: AuthUser = {
+      id: profile.user_id,
+      email: profile.email,
+      full_name: profile.full_name,
+      employee_id: profile.employee_id,
+      department: profile.department,
+      phone: profile.phone,
+    };
+    setUser(nextUser);
+    setSession(token, nextUser);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, signIn, signUp, signOut, loading }}>
+    <AuthContext.Provider
+      value={{ user, signIn, signUp, signOut, refreshUser, loading }}
+    >
       {children}
     </AuthContext.Provider>
   );
